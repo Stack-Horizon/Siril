@@ -1,9 +1,10 @@
 import sys
-from file_handler import get_base_directory, scan_for_pairs
+import os
+from file_handler import get_base_directory_from_file, scan_for_pairs
 from video_engine import render_spaceflight
 
 def main():
-    base_dir = get_base_directory()
+    base_dir = get_base_directory_from_file()
     if not base_dir:
         print("Selection cancelled. Exiting.")
         return
@@ -20,8 +21,8 @@ def main():
     print("\n[Step 2] Scanning Complete. Found the following target image pairs:")
     for index, pair in enumerate(valid_pairs, 1):
         print(f"  [{index}] Folder: {pair['folder']}")
-        print(f"      ↳ Starless: {os.path.basename(pair['starless'])}")
-        print(f"      ↳ Starmask: {os.path.basename(pair['starmask'])}")
+        print(f"      ↳ Starless: {os.path.basename(pair['starless'][0]) if isinstance(pair['starless'], list) else os.path.basename(pair['starless'])}")
+        print(f"      ↳ Starmask: {os.path.basename(pair['starmask'][0]) if isinstance(pair['starmask'], list) else os.path.basename(pair['starmask'])}")
         print("-" * 60)
 
     while True:
@@ -30,6 +31,11 @@ def main():
             choice_idx = int(choice) - 1
             if 0 <= choice_idx < len(valid_pairs):
                 selected_pair = valid_pairs[choice_idx]
+                # Standardize to pick the first matched path if it returned a wildcard list
+                if isinstance(selected_pair['starless'], list):
+                    selected_pair['starless'] = selected_pair['starless'][0]
+                if isinstance(selected_pair['starmask'], list):
+                    selected_pair['starmask'] = selected_pair['starmask'][0]
                 break
             print("Invalid choice. Please pick a number from the list.")
         except ValueError:
