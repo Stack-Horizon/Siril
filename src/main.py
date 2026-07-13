@@ -24,9 +24,13 @@ def main():
 
     print("\n[Step 2] Scanning Complete. Found the following target image pairs:")
     for index, pair in enumerate(valid_pairs, 1):
+        # Safely read first text value if list/tuple frameworks are encountered during view logs
+        sl_name = pair['starless'][0] if isinstance(pair['starless'], (list, tuple)) else pair['starless']
+        sm_name = pair['starmask'][0] if isinstance(pair['starmask'], (list, tuple)) else pair['starmask']
+        
         print(f"  [{index}] Folder: {pair['folder']}")
-        print(f"      ↳ Starless: {os.path.basename(pair['starless'][0] if isinstance(pair['starless'], list) else pair['starless'])}")
-        print(f"      ↳ Starmask: {os.path.basename(pair['starmask'][0] if isinstance(pair['starmask'], list) else pair['starmask'])}")
+        print(f"      ↳ Starless: {os.path.basename(sl_name)}")
+        print(f"      ↳ Starmask: {os.path.basename(sm_name)}")
         print("-" * 60)
 
     while True:
@@ -35,12 +39,6 @@ def main():
             choice_idx = int(choice) - 1
             if 0 <= choice_idx < len(valid_pairs):
                 selected_pair = valid_pairs[choice_idx]
-                
-                # Unpack list values cleanly if trapped inside search arrays
-                if isinstance(selected_pair['starless'], list) and len(selected_pair['starless']) > 0:
-                    selected_pair['starless'] = selected_pair['starless'][0]
-                if isinstance(selected_pair['starmask'], list) and len(selected_pair['starmask']) > 0:
-                    selected_pair['starmask'] = selected_pair['starmask'][0]
                 break
             print("Invalid choice. Please pick a number from the list.")
         except ValueError:
