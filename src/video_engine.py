@@ -3,15 +3,24 @@ import cv2
 import numpy as np
 from astropy.io import fits
 
+def unwrap_path(item):
+    """Recursively unpacks any list, tuple, or set down to a clean text string."""
+    if isinstance(item, (list, tuple, set)):
+        if len(item) > 0:
+            # Look at the first element inside the container
+            return unwrap_path(list(item)[0])
+        else:
+            return None
+    return item
+
 def load_and_normalize_image(file_path):
     """Intelligently processes standard consumer formats or memory-mapped FITS layers."""
-    # FIXED: Extract the raw string path if passed down as a list or a tuple wrapper
-    if isinstance(file_path, (list, tuple)):
-        if len(file_path) > 0:
-            file_path = file_path[0]
-        else:
-            print(" ❌ Error: Received an empty file path slot.")
-            return None
+    # FIXED: Guarantee the path is a clean string by running it through the unwrapper
+    file_path = unwrap_path(file_path)
+    
+    if not file_path or not isinstance(file_path, str):
+        print(" ❌ Error: Resolved file path is empty or invalid.")
+        return None
 
     ext = os.path.splitext(file_path).lower()
     
@@ -71,11 +80,10 @@ def render_spaceflight(selected_pair):
     """Executes frame transformation layouts and exports an MP4 movie container."""
     print(f"\n[Step 3] Loading image assets into background processing buffers...")
     
-    # FIXED: Force the target selection items to unpack clean elements if they contain sequences
-    starless_src = selected_pair['starless']
-    starmask_src = selected_pair['starmask']
-    if isinstance(starless_src, (list, tuple)) and len(starless_src) > 0: starless_src = starless_src[0]
-    if isinstance(starmask_src, (list, tuple)) and len(starmask_src) > 0: starmask_src = starmask_src[0]
+    # Safely unwrap strings from any array structures passed down
+    starless_src = unwrap_path(selected_pair['starless'])
+    starmask_src = unwrap_path(selected_pair['starmask'])
+    out_dir = unwrap_path(selected_pair['output_dir'])
 
     bg_img = load_and_normalize_image(starless_src)
     stars_img = load_and_normalize_image(starmask_src)
@@ -85,16 +93,12 @@ def render_spaceflight(selected_pair):
         return
 
     if bg_img.shape != stars_img.shape:
-        stars_img = cv2.resize(stars_img, (bg_img.shape[1], bg_img.shape[0]))
+        stars_img = cv2.resize(stars_img, (bg_img.shape, bg_img.shape))
 
     height, width, _ = bg_img.shape
     fps = 30
     total_frames = fps * 10
     
-    out_dir = selected_pair['output_dir']
-    if isinstance(out_dir, (list, tuple)):
-        out_dir = out_dir[0]
-        
     output_path = os.path.join(out_dir, f"spaceflight_{selected_pair['folder']}.mp4")
 
     render_w, render_h = width, height
